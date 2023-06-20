@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 public class ConfigureParser {
     private static final String USAGE = "\nConfigureParser <config> <count-of-tests> <test-dir> [<tests-prefix>]";
     private static int unusedInd = 0;
+    private static final List<GType> EMPTYLIST = List.of();
 
     private ConfigureParser() {
     }
@@ -28,7 +29,10 @@ public class ConfigureParser {
         List<List<GType>> ans = new ArrayList<>();
         Map<String, GType> vars = new HashMap<>();
         for (String line : lines) {
-            ans.add(parseLine(line, vars));
+            List<GType> parsed = parseLine(line, vars);
+            if (!parsed.isEmpty()) {
+                ans.add(parsed);
+            }
         }
         return ans;
     }
@@ -109,9 +113,15 @@ public class ConfigureParser {
     }
 
     private static List<GType> parseLine(String line, Map<String, GType> vars) throws ParserException {
+        if (line.isBlank()) {
+            return EMPTYLIST;
+        }
         CharIterator it = new CharIterator(line);
         if (it.take("next")) {
             return null;
+        }
+        if (it.take("//")) {
+            return EMPTYLIST;
         }
         List<GType> ans = new ArrayList<>();
         while (it.hasNext()) {

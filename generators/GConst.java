@@ -10,7 +10,6 @@ package generators;
  */
 public class GConst<T extends GType> implements GType {
     private final T gen;
-    private Object value = null;
 
     /**
      * Создает новый константный генератор.
@@ -23,17 +22,11 @@ public class GConst<T extends GType> implements GType {
 
     @Override
     public Object cached() {
-        if (value == null) {
-            value = gen.cached();
-        }
-        return value;
+        return gen.cached();
     }
 
     @Override
     public Object nextObject() {
-        if (value == null) {
-            value = gen.cached();
-        }
-        return value;
+        return gen.nextObject();
     }
 }

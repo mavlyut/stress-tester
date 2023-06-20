@@ -2,3 +2,9 @@
 failed_test_input
 stress-test.jar
 MANIFEST.MF
+.idea
+*.iml
+*.class
+*out*
+solutions
+tests
