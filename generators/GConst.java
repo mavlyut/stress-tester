@@ -8,25 +8,25 @@ package generators;
  *
  * @param <T> тип хранимого значения
  */
-public class GConst<T extends GType> implements GType {
-    private final T gen;
+public class GConst<T> implements GType, GBound<T> {
+    private final T value;
 
     /**
      * Создает новый константный генератор.
      *
-     * @param gen возвращаемое значение
+     * @param value возвращаемое значение
      */
-    public GConst(T gen) {
-        this.gen = gen;
+    public GConst(T value) {
+        this.value = value;
     }
 
     @Override
-    public Object cached() {
-        return gen.cached();
+    public T cached() {
+        return value;
     }
 
     @Override
-    public Object nextObject() {
-        return gen.nextObject();
+    public T nextObject() {
+        return value;
     }
 }

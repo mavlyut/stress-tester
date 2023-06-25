@@ -10,36 +10,32 @@ import java.util.function.BiFunction;
  *
  * @param <T> примитивный тип
  */
-public abstract class GPrimitive<T extends Comparable<T>> extends AbstractGType {
-    private final T left, right;
+public abstract class GPrimitive<T extends Comparable<T>> extends AbstractGType implements GBound<T> {
+    protected final GBound<T> left, right;
     private final BiFunction<T, T, T> generator;
-    protected final static float EPS = 1e-9f;
+    public final static float EPS = 1e-9f;
 
     /**
      * Создает новый генератор примитивного типа {@link T} в указанных границах.
-     * @param left левая граница для генерации (включительно)
-     * @param right правая граница для генерации (включительно)
+     *
+     * @param left      левая граница для генерации (включительно)
+     * @param right     правая граница для генерации (невключительно)
      * @param generator метод для генерации случайного примитива из промежутка [a, b)
      */
-    protected GPrimitive(T left, T right, BiFunction<T, T, T> generator) {
-        if (left.compareTo(right) > 0) {
-            throw new IllegalArgumentException("Left bound must be less or equals to right, found: " + left + ".." + right);
-        }
+     protected GPrimitive(GBound<T> left, GBound<T> right, BiFunction<T, T, T> generator) {
         this.left = left;
         this.right = right;
         this.generator = generator;
     }
 
     @Override
-    protected Object generate() {
-        return generator.apply(left, right);
-    }
-
-    public T getLeftBound() {
-        return left;
-    }
-
-    public T getRightBound() {
-        return right;
+    @SuppressWarnings("unchecked")
+    protected T generate() {
+         try {
+             return generator.apply((T) left.cached(), (T) right.cached());
+         } catch (Throwable e) {
+             System.out.println(left.cached() + " " + right.cached());
+             throw e;
+         }
     }
 }

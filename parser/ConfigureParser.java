@@ -12,24 +12,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class ConfigureParser {
     private static final String USAGE = "\nConfigureParser <config> <count-of-tests> <test-dir> [<tests-prefix>]";
-    private static int unusedInd = 0;
     private static final List<GType> EMPTYLIST = List.of();
+    private final Map<String, GType> vars = new HashMap<>();
+    private int unusedInd = 0;
 
     private ConfigureParser() {
     }
 
-    private static String getUnusedName() {
+    private String getUnusedName() {
+        while (vars.containsKey("unused" + unusedInd)) {
+            unusedInd++;
+        }
         return "unused" + (unusedInd++);
     }
 
-    private static List<List<GType>> parse(List<String> lines) throws ParserException {
+    private List<List<GType>> parse(List<String> lines) throws ParserException {
         List<List<GType>> ans = new ArrayList<>();
-        Map<String, GType> vars = new HashMap<>();
+        vars.clear();
         for (String line : lines) {
-            List<GType> parsed = parseLine(line, vars);
+            List<GType> parsed = parseLine(line);
+            assert parsed != null;
             if (!parsed.isEmpty()) {
                 ans.add(parsed);
             }
@@ -41,31 +47,34 @@ public class ConfigureParser {
         T get() throws ParserException;
     }
 
-    private static <T extends Number, R extends GType>
-    R parseRange(CharIterator it, NumberGetter<T> getter, BiFunction<T, T, R> toGenerator) throws ParserException {
+    @SuppressWarnings("unchecked")
+    private <T extends Number, R> GBound<R> parseRange(CharIterator it, NumberGetter<T> getter, Function<T, T> plus,
+                                                    BiFunction<GBound<T>, GBound<T>, GBound<R>> toGenerator) throws ParserException {
         it.expect("[");
-        T l = getter.get();
+        String next = it.nextWord();
+        GBound<T> l = next.isEmpty() ? new GConst<>(getter.get()) : (GBound<T>) vars.get(next);
         it.expect(";");
-        T r = getter.get();
-        R ans = toGenerator.apply(l, r);
+        next = it.nextWord();
+        GBound<T> r = next.isEmpty() ? new GConst<>(plus.apply(getter.get())) : (GBound<T>) vars.get(next);
+        GBound<R> ans = toGenerator.apply(l, r);
         it.expect("]");
         return ans;
     }
 
-    private static GChar parseCharRange(CharIterator it) throws ParserException {
-        return parseRange(it, () -> {
+    private GChar parseCharRange(CharIterator it) throws ParserException {
+        return (GChar)this.parseRange(it, () -> {
             int ans;
             if (it.take('\'')) {
                 ans = it.take();
                 it.expect('\'');
             } else {
-                ans = (char) it.nextIInt();
+                ans = it.nextIInt();
             }
             return ans;
-        }, (l, r) -> new GChar((char) (l.intValue()), (char) (r.intValue())));
+        }, x -> x + 1, GChar::new);
     }
 
-    private static GType parseType(CharIterator it, Map<String, GType> vars) throws ParserException {
+    private GType parseType(CharIterator it) throws ParserException {
         String type = it.nextWord();
         return switch (type) {
             case "char" -> {
@@ -74,45 +83,41 @@ public class ConfigureParser {
             }
             case "int" -> {
                 it.expect("in");
-                yield parseRange(it, it::nextIInt, GInt::new);
+                yield parseRange(it, it::nextIInt, x -> x + 1, GInt::new);
             }
             case "long" -> {
                 it.expect("in");
-                yield parseRange(it, it::nextLInt, GLong::new);
+                yield parseRange(it, it::nextLInt, x -> x + 1, GLong::new);
             }
             case "float" -> {
                 it.expect("in");
-                yield parseRange(it, it::nextFInt, GFloat::new);
+                yield parseRange(it, it::nextFInt, x -> x + GPrimitive.EPS, GFloat::new);
             }
             case "double" -> {
                 it.expect("in");
-                yield parseRange(it, it::nextDInt, GDouble::new);
+                yield parseRange(it, it::nextDInt, x -> x + GPrimitive.EPS, GDouble::new);
             }
             case "array", "string" -> {
                 it.expect("len");
                 GType len;
                 if (it.take("in")) {
-                    len = parseRange(it, it::nextIInt, GInt::new);
+                    len = parseRange(it, it::nextIInt, x -> x + 1, GInt::new);
                 } else if (it.take("is")) {
-                    len = new GConst<>(vars.get(it.nextWord()));
+                    len = vars.get(it.nextWord());
                 } else {
                     throw it.exception("Expected \"in\" or \"is\" in array declaration");
                 }
                 it.expect("of");
-                if (type.equals("array")) {
-                    it.expect("{");
-                    GType innerType = parseType(it, vars);
-                    it.expect("}");
-                    yield new GArray<>(len, innerType);
-                }
-                GChar innerType = parseCharRange(it);
-                yield new GString(len, innerType.getLeftBound(), innerType.getRightBound());
+                it.expect(type.equals("array"), "{");
+                GType innerType = parseType(it);
+                it.expect(type.equals("array"), "}");
+                yield new GArray<>(len, innerType);
             }
             default -> throw it.exception("Unexpected type: " + type);
         };
     }
 
-    private static List<GType> parseLine(String line, Map<String, GType> vars) throws ParserException {
+    private List<GType> parseLine(String line) throws ParserException {
         if (line.isBlank()) {
             return EMPTYLIST;
         }
@@ -120,7 +125,7 @@ public class ConfigureParser {
         if (it.take("next")) {
             return null;
         }
-        if (it.take("//")) {
+        if (it.take("%")) {
             return EMPTYLIST;
         }
         List<GType> ans = new ArrayList<>();
@@ -133,7 +138,7 @@ public class ConfigureParser {
                 name = getUnusedName();
             }
             it.expect(":");
-            GType type = parseType(it, vars);
+            GType type = parseType(it);
             ans.add(type);
             vars.put(name, type);
         }
@@ -141,7 +146,7 @@ public class ConfigureParser {
         return ans;
     }
 
-    private static void nextTest(List<List<GType>> config, Path path) {
+    private void nextTest(List<List<GType>> config, Path path) {
         try (BufferedWriter bw = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             for (List<GType> line : config) {
                 for (GType type : line) {
@@ -168,9 +173,10 @@ public class ConfigureParser {
                 Files.createDirectories(testDir);
             }
             String prefix = (args.length == 3 ? "test" : args[3]);
-            List<List<GType>> config = parse(lines);
+            ConfigureParser parser = new ConfigureParser();
+            List<List<GType>> config = parser.parse(lines);
             for (int i = 1; i <= n; i++) {
-                nextTest(config, testDir.resolve(prefix + i));
+                parser.nextTest(config, testDir.resolve(prefix + i));
             }
         } catch (IOException e) {
             System.err.println("Can't read from file");

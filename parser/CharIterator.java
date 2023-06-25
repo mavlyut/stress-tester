@@ -57,12 +57,19 @@ public class CharIterator implements Iterator<Character> {
         }
     }
 
-    public void expect(String x) throws ParserException {
+    public void expect(boolean need, String x) throws ParserException {
+        if (!need) {
+            return;
+        }
         skipWS();
         for (char c : x.toCharArray()) {
             expect(c);
         }
         skipWS();
+    }
+
+    public void expect(String x) throws ParserException {
+        expect(true, x);
     }
 
     public boolean take(String x) {

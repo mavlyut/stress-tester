@@ -1,7 +1,19 @@
 package generators;
 
-public class GChar extends GPrimitive<Character> {
-    public GChar(char left, char right) {
-        super(left, (char)(right + 1), (l, r) -> (char)random.nextInt(l, r));
+public class GChar implements GType, GBound<Character> {
+    private final GInt gint;
+
+    public GChar(GBound<Integer> left, GBound<Integer> right) {
+        gint = new GInt(left, right);
+    }
+
+    @Override
+    public Character cached() {
+        return (char)gint.cached();
+    }
+
+    @Override
+    public Character nextObject() {
+        return (char)gint.nextObject();
     }
 }

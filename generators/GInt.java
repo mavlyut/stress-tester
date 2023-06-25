@@ -1,7 +1,8 @@
 package generators;
 
 public class GInt extends GPrimitive<Integer> {
-    public GInt(int left, int right) {
-        super(left, right + 1, random::nextInt);
+    // [left, right)
+    public GInt(GBound<Integer> left, GBound<Integer> right) {
+        super(left, right, random::nextInt);
     }
 }
