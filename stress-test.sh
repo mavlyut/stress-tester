@@ -34,10 +34,11 @@ function check_existing() {
 
 function compile() {
   if [[ $1 =~ ".java" ]]; then
-    classname=${1::-5}
     javac $1
   elif [[ $1 =~ ".cpp" ]]; then
     g++ -o moscow.out $1
+  elif [[ $1 =~ ".kt" ]]; then
+    kotlinc $1
   else
     echo "Расширение не поддерживается"
   fi
@@ -46,12 +47,15 @@ function compile() {
 function run() {
   if [[ $1 =~ ".java" ]]; then
     classname=${1::-5}
-    java $classname < $2 > $3
+    java $classname
   elif [[ $1 =~ ".cpp" ]]; then
-    ./moscow.out < $2 > $3
+    ./moscow.out
+  elif [[ $1 =~ ".kt" ]]; then
+    classname=${1::-3}
+    kotlin $$classname
   else
     echo "Расширение не поддерживается"
-  fi
+  fi < $2 > $3
 }
 
 function clean() {
@@ -60,7 +64,10 @@ function clean() {
     rm $classname.class
   elif [[ $1 =~ ".cpp" ]]; then
     rm ./moscow.out
-  else
+  elif [[ $1 =~ ".kt" ]]; then
+     classname=${1::-3}
+     rm $classname.class
+ else
     echo "Расширение не поддерживается"
   fi
 }
