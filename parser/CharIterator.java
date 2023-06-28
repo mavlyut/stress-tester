@@ -3,8 +3,8 @@ package parser;
 import java.util.Iterator;
 
 public class CharIterator implements Iterator<Character> {
-    final char[] chars;
-    int ind;
+    private final char[] chars;
+    private int ind;
     public final static char END = '\0';
 
     public ParserException exception(String message) {
@@ -25,6 +25,13 @@ public class CharIterator implements Iterator<Character> {
     @Override
     public boolean hasNext() {
         return ind < chars.length;
+    }
+
+    @Override
+    public void remove() {
+        if (ind-- == 0) {
+            Iterator.super.remove();
+        }
     }
 
     @Override
@@ -51,6 +58,9 @@ public class CharIterator implements Iterator<Character> {
         return false;
     }
 
+    /**
+     * задумайтесь перед использование ({@link #expect(String)} скипает WS)
+     */
     public void expect(char x) throws ParserException {
         if (!take(x)) {
             throw exception("expected " + x + ", found " + peek());
@@ -137,5 +147,9 @@ public class CharIterator implements Iterator<Character> {
         }
         skipWS();
         return (negate ? -1 : 1) * Double.parseDouble(sb.toString());
+    }
+
+    public boolean between(char l, char r) {
+        return peek() != END && l <= peek() && peek() <= r;
     }
 }

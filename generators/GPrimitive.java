@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
 public abstract class GPrimitive<T extends Comparable<T>> extends AbstractGType implements GBound<T> {
     protected final GBound<T> left, right;
     private final BiFunction<T, T, T> generator;
-    public final static float EPS = 1e-9f;
+    protected final static float EPS = 1e-9f;
 
     /**
      * Создает новый генератор примитивного типа {@link T} в указанных границах.
@@ -22,7 +22,7 @@ public abstract class GPrimitive<T extends Comparable<T>> extends AbstractGType 
      * @param right     правая граница для генерации (невключительно)
      * @param generator метод для генерации случайного примитива из промежутка [a, b)
      */
-     protected GPrimitive(GBound<T> left, GBound<T> right, BiFunction<T, T, T> generator) {
+    protected GPrimitive(GBound<T> left, GBound<T> right, BiFunction<T, T, T> generator) {
         this.left = left;
         this.right = right;
         this.generator = generator;
@@ -30,12 +30,14 @@ public abstract class GPrimitive<T extends Comparable<T>> extends AbstractGType 
 
     @Override
     @SuppressWarnings("unchecked")
-    protected T generate() {
-         try {
-             return generator.apply((T) left.cached(), (T) right.cached());
-         } catch (Throwable e) {
-             System.out.println(left.cached() + " " + right.cached());
-             throw e;
-         }
+    protected T generate(Variables vars) {
+        try {
+            return generator.apply((T) left.cached(vars), getExclusiveBound((T) right.cached(vars)));
+        } catch (Throwable e) {
+            System.out.println(left.cached(vars) + " " + right.cached(vars));
+            throw e;
+        }
     }
+
+    protected abstract T getExclusiveBound(T x);
 }

@@ -21,12 +21,12 @@ public class GConst<T> implements GType, GBound<T> {
     }
 
     @Override
-    public T cached() {
+    public T cached(Variables vars) {
         return value;
     }
 
     @Override
-    public T nextObject() {
+    public T nextObject(Variables vars) {
         return value;
     }
 }

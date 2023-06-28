@@ -5,7 +5,7 @@ import java.util.Random;
 
 /**
  * Реализации интерфейса {@link GType} -- генераторы различных типов.
- * Будем поддерживать инвариант, что после вызова {@link #nextObject()}
+ * Будем поддерживать инвариант, что после вызова {@link #nextObject(Variables)}
  * значение кешируется, и может быть возвращено методом {@link #cached()}.
  * <br><br>
  * Обратите внимание, что не стоит использовать один и тот же неанонимный генератор:
@@ -18,7 +18,7 @@ import java.util.Random;
  * {@code var n = new GInt(0, 100);}<br>
  * {@code var m = n;}<br>
  * {@code var a = new GArray<>(n, n);}<br>
- * поскольку вызов метода {@link #nextObject()} перетрет закешированное значение <i>n</i>,
+ * поскольку вызов метода {@link #nextObject(Variables)} перетрет закешированное значение <i>n</i>,
  * и массив будет уже длины <i>m</i>, а после генерации массива в <i>n</i> лежит уже
  * даже и не <i>m</i>.
  */
@@ -27,19 +27,19 @@ public interface GType {
 
     /**
      * Возвращает "закешированное" значение -- последний результат вызова метода
-     * {@link #nextObject()} (дефолтная реализация метода {@link #nextToString()}
-     * внутри вызывает {@link #nextObject()}).
+     * {@link #nextObject(Variables)} (дефолтная реализация метода {@link #nextToString(Variables)}
+     * внутри вызывает {@link #nextObject(Variables)}).
      *
      * @return закешированное значение
      */
-    Object cached();
+    Object cached(Variables vars);
 
     /**
      * Генерирует случайный объект. Обновляет закешированное значение.
      *
      * @return следующий случайный объект
      */
-    Object nextObject();
+    Object nextObject(Variables vars);
 
     /**
      * Возвращает строковое представление следующего случайного объекта.
@@ -48,8 +48,8 @@ public interface GType {
      *
      * @return строковое представление следующего объекта
      */
-    default String nextToString() {
-        Object ret = nextObject();
+    default String nextToString(Variables vars) {
+        Object ret = nextObject(vars);
         if (ret instanceof Object[] arr) {
             return Arrays.asList(arr).toString();
         }

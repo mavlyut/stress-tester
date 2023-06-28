@@ -1,16 +1,15 @@
 package generators;
 
-public class GArray<T extends GType> extends AbstractGType {
-    private final GType lenType;
-    private final T innerType;
+public class GArray extends AbstractGType {
+    private final String lenName, innerName;
 
-    public GArray(GType lenType, T innerType) {
-        this.lenType = lenType;
-        this.innerType = innerType;
+    public GArray(String lenName, String innerName) {
+        this.lenName = lenName;
+        this.innerName = innerName;
     }
 
-    private int getSize() {
-        int ans = ((Number)lenType.cached()).intValue();
+    private int getSize(Variables vars) {
+        int ans = ((Number) vars.get(lenName).cached(vars)).intValue();
         if (ans < 0) {
             throw new IllegalArgumentException("LenType generate negative size: " + ans);
         }
@@ -18,21 +17,21 @@ public class GArray<T extends GType> extends AbstractGType {
     }
 
     @Override
-    protected Object[] generate() {
-        Object[] ans = new Object[getSize()];
+    protected Object[] generate(Variables vars) {
+        Object[] ans = new Object[getSize(vars)];
         for (int i = 0; i < ans.length; i++) {
-            ans[i] = innerType.nextObject();
+            ans[i] = vars.get(innerName).nextObject(vars);
         }
         return ans;
     }
 
     @Override
-    public String nextToString() {
+    public String nextToString(Variables vars) {
         StringBuilder ans = new StringBuilder();
-        // fixme)
+        GType innerType = vars.get(innerName);
         char delimiter = (innerType instanceof GArray) ? '\n' : ' ';
-        for (int i = 0; i < getSize(); i++) {
-            ans.append(i == 0 ? "" : delimiter).append(innerType.nextToString());
+        for (int i = 0; i < getSize(vars); i++) {
+            ans.append(i == 0 ? "" : delimiter).append(innerType.nextToString(vars));
         }
         return ans.toString();
     }

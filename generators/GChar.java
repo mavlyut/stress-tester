@@ -8,12 +8,12 @@ public class GChar implements GType, GBound<Character> {
     }
 
     @Override
-    public Character cached() {
-        return (char)gint.cached();
+    public Character cached(Variables vars) {
+        return (char) gint.cached(vars);
     }
 
     @Override
-    public Character nextObject() {
-        return (char)gint.nextObject();
+    public Character nextObject(Variables vars) {
+        return (char) gint.nextObject(vars);
     }
 }
