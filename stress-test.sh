@@ -17,7 +17,7 @@ testcnt=10
 function print_usage() {
   echo "$1"
   echo "Usage: <input-config> <good-solution> <bad-solution>"
-  exit 12
+  exit 20
 }
 
 function removedir() {
@@ -29,6 +29,7 @@ function removedir() {
 function check_existing() {
   if [[ ! -f $1 ]]; then
     print_usage "$2 file not found"
+    exit 32
   fi
 }
 
@@ -67,7 +68,7 @@ function clean() {
   elif [[ $1 =~ ".kt" ]]; then
      classname=${1::-3}
      rm $classname.class
- else
+  else
     echo "Расширение не поддерживается"
   fi
 }
@@ -84,34 +85,62 @@ check_existing $3 Bad-solution
 echo "Manifest-Version: 1.0" > $manifest
 echo "Main-Class: parser.ConfigureParser" >> $manifest
 
-javac -d OUT $(find . -name \*.java)
-jar --create --manifest $manifest --file $jarfile -C OUT .
-removedir OUT
+# make jar
+{
+  javac -d OUT $(find . -name \*.java) &&
+    jar --create --manifest $manifest --file $jarfile -C OUT . &&
+    removedir OUT
+} || {
+  echo "Error while making jar-file"
+  exit 95
+}
 
-compile $2
-compile $3
-echo Build completed!
+# compile
+{
+  compile $2 && compile $3 && echo "Build completed!"
+} || {
+  echo "Error while compiling"
+  exit 103
+}
 
-fl=true
+# run tests
+fl="1"
 for (( c = 1; c <= 10; c+=1 )) do
   java -jar stress-test.jar $1 $testcnt $testdir
   for (( i = 1; i <= $((testcnt)); i++ )); do
-    run $2 $testdir/test$i $out1
-    run $3 $testdir/test$i $out2
+    {
+      run $2 $testdir/test$i $out1
+    } || {
+      i=$(($i - 1)) # todo?
+      continue
+    }
+    {
+      run $3 $testdir/test$i $out2
+    } || {
+      echo "Test $(( ($c - 1) * $testcnt + $i )) failed!"
+      echo "Testcase - in file \"$failed\""
+      cp $testdir/test$i $failed
+      echo Expected: $(cat $out1), found: exception
+      fl="0"
+      break
+    }
     if [[ $(diff $out1 $out2) ]]; then
-      echo Test failed!
-      echo Testcase - in file \"$failed\"
+      echo "Test $(( ($c - 1) * $testcnt + $i )) failed!"
+      echo "Testcase - in file \"$failed\""
       cp $testdir/test$i $failed
       echo Expected: $(cat $out1), found: $(cat $out2)
-      fl=false
+      fl="0"
       break
     fi
   done
-  if [[ ! $fl ]]; then break; fi
-  echo $(($testcnt*$c)) tests passed!
+  if [[ $fl == "0" ]]; then break; fi
+  echo $(($testcnt * $c)) tests passed!
 done
 
-rm $out1 $out2 $manifest $jarfile
-removedir $testdir
-clean $2
-clean $3
+# cleaning
+{
+  rm -f $out1 $out2 $manifest $jarfile && removedir $testdir && clean $2 && clean $3
+} || {
+  echo "Error while deleting files"
+  exit 134
+}
