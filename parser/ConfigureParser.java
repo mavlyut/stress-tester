@@ -16,16 +16,8 @@ public class ConfigureParser {
     private static final List<GType> EMPTYLIST = List.of();
     private final Variables vars = new Variables();
     private final ExpressionParser exprParser = new ExpressionParser();
-    private int unusedInd = 0;
 
     private ConfigureParser() {
-    }
-
-    private String getUnusedName() {
-        while (vars.containsKey("unused" + unusedInd)) {
-            unusedInd++;
-        }
-        return "unused" + (unusedInd++);
     }
 
     private List<List<GType>> parse(List<String> lines) throws ParserException {
@@ -99,7 +91,7 @@ public class ConfigureParser {
                 it.expect("len");
                 String lenName;
                 if (it.take("in")) {
-                    lenName = getUnusedName();
+                    lenName = vars.getUnusedName();
                     vars.put(lenName, parseRange(it, it::nextIInt, GInt::new));
                 } else if (it.take("is")) {
                     lenName = it.nextWord();
@@ -108,7 +100,7 @@ public class ConfigureParser {
                 }
                 it.expect("of");
                 it.expect(type.equals("array"), "{");
-                String innerName = getUnusedName();
+                String innerName = vars.getUnusedName();
                 parseType(innerName, it);
                 it.expect(type.equals("array"), "}");
                 yield new GArray(lenName, innerName);
@@ -145,7 +137,7 @@ public class ConfigureParser {
             }
             String name = it.nextWord();
             if (name.isEmpty()) {
-                name = getUnusedName();
+                name = vars.getUnusedName();
             }
             it.expect(":");
             ans.add(parseType(name, it));

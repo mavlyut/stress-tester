@@ -95,10 +95,17 @@ public class CharIterator implements Iterator<Character> {
         return true;
     }
 
+    private boolean isAlpha(boolean first) {
+        if (Character.isAlphabetic(peek())) {
+            return true;
+        }
+        return Character.isDigit(peek()) && !first;
+    }
+
     public String nextWord() {
         skipWS();
         StringBuilder sb = new StringBuilder();
-        while (Character.isLetter(peek())) {
+        while (isAlpha(sb.isEmpty())) {
             sb.append(take());
         }
         skipWS();
