@@ -111,7 +111,7 @@ for (( c = 1; c <= 10; c+=1 )) do
     {
       run $2 $testdir/test$i $out1
     } || {
-      i=$(($i - 1)) # todo?
+      i=$(($i - 1))
       continue
     }
     {
