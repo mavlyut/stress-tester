@@ -9,3 +9,5 @@ MANIFEST.MF
 solutions
 tests
 OUT
+build*
+cf
