@@ -67,25 +67,18 @@ public class CharIterator implements Iterator<Character> {
         }
     }
 
-    public void expect(boolean need, String x) throws ParserException {
-        if (!need) {
-            return;
-        }
+    public void expect(String expected) throws ParserException {
         skipWS();
-        for (char c : x.toCharArray()) {
+        for (char c : expected.toCharArray()) {
             expect(c);
         }
         skipWS();
     }
 
-    public void expect(String x) throws ParserException {
-        expect(true, x);
-    }
-
-    public boolean take(String x) {
+    public boolean take(String test) {
         skipWS();
         int y = ind;
-        for (char c : x.toCharArray()) {
+        for (char c : test.toCharArray()) {
             if (!take(c)) {
                 ind = y;
                 return false;
@@ -158,5 +151,14 @@ public class CharIterator implements Iterator<Character> {
 
     public boolean between(char l, char r) {
         return peek() != END && l <= peek() && peek() <= r;
+    }
+
+    public Object parseConstValue() throws ParserException {
+        if (take("\"")) {
+            String ans = nextWord();
+            expect("\"");
+            return ans;
+        }
+        return nextDInt();
     }
 }

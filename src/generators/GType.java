@@ -6,7 +6,7 @@ import java.util.Random;
 /**
  * Реализации интерфейса {@link GType} -- генераторы различных типов.
  * Будем поддерживать инвариант, что после вызова {@link #nextObject(Variables)}
- * значение кешируется, и может быть возвращено методом {@link #cached()}.
+ * значение кешируется, и может быть возвращено методом {@link #cached(Variables)}.
  * <br><br>
  * Обратите внимание, что не стоит использовать один и тот же неанонимный генератор:
  * приведенный ниже код генерирует число <i>n, m</i>, и массив <i>a</i> длины <i>n</i>.
@@ -50,6 +50,13 @@ public interface GType {
      */
     default String nextToString(Variables vars) {
         Object ret = nextObject(vars);
+        if (ret instanceof Character[] str) {
+            StringBuilder sb = new StringBuilder();
+            for (char c : str) {
+                sb.append(c);
+            }
+            return sb.toString();
+        }
         if (ret instanceof Object[] arr) {
             return Arrays.asList(arr).toString();
         }

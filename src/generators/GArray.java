@@ -1,14 +1,14 @@
 package generators;
 
 public class GArray extends AbstractGType {
-    private final String lenName, innerName;
+    protected final String lenName, innerName;
 
     public GArray(String lenName, String innerName) {
         this.lenName = lenName;
         this.innerName = innerName;
     }
 
-    private int getSize(Variables vars) {
+    protected int getSize(Variables vars) {
         int ans = ((Number) vars.get(lenName).cached(vars)).intValue();
         if (ans < 0) {
             throw new IllegalArgumentException("LenType generate negative size: " + ans);

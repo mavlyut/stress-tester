@@ -98,12 +98,28 @@ public class ConfigureParser {
                 } else {
                     throw it.exception("Expected \"in\" or \"is\" in array declaration");
                 }
-                it.expect("of");
-                it.expect(type.equals("array"), "{");
                 String innerName = vars.getUnusedName();
-                parseType(innerName, it);
-                it.expect(type.equals("array"), "}");
-                yield new GArray(lenName, innerName);
+                it.expect("of");
+                if (type.equals("array")) {
+                    it.expect("{");
+                    parseType(innerName, it);
+                    it.expect("}");
+                    yield new GArray(lenName, innerName);
+                } else {
+                    vars.put(innerName, parseCharRange(it));
+                    yield new GString(lenName, innerName);
+                }
+            }
+            case "rnd" -> {
+                it.expect("in");
+                it.expect("{");
+                List<Object> group = new ArrayList<>();
+                GGroup res = new GGroup(group);
+                do {
+                    group.add(it.parseConstValue());
+                } while (it.take(","));
+                it.expect("}");
+                yield res;
             }
             default -> throw it.exception("Unexpected type: " + type);
         };

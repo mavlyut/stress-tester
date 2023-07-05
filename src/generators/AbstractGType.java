@@ -11,6 +11,9 @@ public abstract class AbstractGType implements GType {
 
     @Override
     public Object cached(Variables vars) {
+        if (cached == null) {
+            nextObject(vars);
+        }
         return cached;
     }
 

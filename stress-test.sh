@@ -124,7 +124,7 @@ echo "Main-Class: parser.ConfigureParser" >> $manifest
 }
 
 # run tests
-cd $compiledir
+cd $compiledir # || echo "directory not found" && exit 121
 fl="1"
 for (( c = 1; c <= 10; c+=1 )) do
   {
@@ -151,7 +151,7 @@ for (( c = 1; c <= 10; c+=1 )) do
     if [[ $(diff $out1 $out2) ]]; then
       echo "[-] Test $(( ($c - 1) * $testcnt + $i )) failed!"
       echo "Testcase - in file \"$failed\""
-      cp $testdir/test$i $failed
+      cp $testdir/test$i ../$failed
       echo Expected: $(cat $out1), found: $(cat $out2)
       fl="0"
       break
@@ -160,8 +160,6 @@ for (( c = 1; c <= 10; c+=1 )) do
   if [[ $fl == "0" ]]; then break; fi
   echo "[+]" $(($testcnt * $c)) "tests passed!"
 done
-
-exit 158
 
 # cleaning
 finish

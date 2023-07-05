@@ -14,6 +14,6 @@ public class GChar implements GType, GBound<Character> {
 
     @Override
     public Character nextObject(Variables vars) {
-        return (char) gint.nextObject(vars);
+        return (char)((Number)gint.nextObject(vars)).intValue();
     }
 }
